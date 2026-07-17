@@ -15,6 +15,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.IntSupplier;
 import java.util.function.IntUnaryOperator;
@@ -993,12 +994,11 @@ public class GenericStyledArea<PS, SEG, S> extends Region
         }
         List<Cell<Paragraph<PS, SEG, S>, ParagraphBox<PS, SEG, S>>> visibleList = virtualFlow.visibleCells();
         int virtualIndex = virtualFlowParagraphs.getViewIndex(allParIndex);
-        if ( virtualIndex < 0 ) {
-            return Optional.empty();
-        }
-        for ( int visibleIndex = 0; visibleIndex < visibleList.size(); visibleIndex++ ) {
-            if ( visibleList.get(visibleIndex).getNode().getIndex() == allParIndex ) {
-                return Optional.of(visibleIndex);
+        if ( virtualIndex >= 0 ) {
+            for ( int visibleIndex = 0; visibleIndex < visibleList.size(); visibleIndex++ ) {
+                if ( visibleList.get(visibleIndex).getNode().getIndex() == allParIndex ) {
+                    return Optional.of(visibleIndex);
+                }
             }
         }
         return Optional.empty();
@@ -1299,27 +1299,27 @@ public class GenericStyledArea<PS, SEG, S> extends Region
 
     @Override
     public void showParagraphInViewport(int paragraphIndex) {
-        suspendVisibleParsWhile(() -> virtualFlow.show(getVisibleParagraphIndex(paragraphIndex)));
+        suspendVisibleParsWhile(() -> forVisibleParagraphIndex(paragraphIndex, virtualFlow::show));
     }
 
     @Override
     public void showParagraphAtTop(int paragraphIndex) {
-        suspendVisibleParsWhile(() -> virtualFlow.showAsFirst(getVisibleParagraphIndex(paragraphIndex)));
+        suspendVisibleParsWhile(() -> forVisibleParagraphIndex(paragraphIndex, virtualFlow::showAsFirst));
     }
 
     @Override
     public void showParagraphAtBottom(int paragraphIndex) {
-        suspendVisibleParsWhile(() -> virtualFlow.showAsLast(getVisibleParagraphIndex(paragraphIndex)));
+        suspendVisibleParsWhile(() -> forVisibleParagraphIndex(paragraphIndex, virtualFlow::showAsLast));
     }
 
     @Override
     public void showParagraphRegion(int paragraphIndex, Bounds region) {
-        suspendVisibleParsWhile(() -> virtualFlow.show(getVisibleParagraphIndex(paragraphIndex), region));
+        suspendVisibleParsWhile(() -> forVisibleParagraphIndex(paragraphIndex, p -> virtualFlow.show(p, region)));
     }
 
     public void showParagraphAtCenter(int paragraphIndex) {
         double offset = Math.floor( getHeight() / 2.0 );
-        suspendVisibleParsWhile(() -> virtualFlow.showAtOffset(getVisibleParagraphIndex(paragraphIndex),offset));
+        suspendVisibleParsWhile(() -> forVisibleParagraphIndex(paragraphIndex, p -> virtualFlow.showAtOffset(p, offset)));
     }
 
     @Override
@@ -1855,7 +1855,7 @@ public class GenericStyledArea<PS, SEG, S> extends Region
         ParagraphBox<PS, SEG, S> cell = getCell(parIdx);
         Bounds caretBounds = cell.getCaretBounds(caretSelectionBind.getUnderlyingCaret());
         double y = caretBounds.getMaxY();
-        suspendVisibleParsWhile(() -> virtualFlow.showAtOffset(getVisibleParagraphIndex(parIdx), getViewportHeight() - y));
+        suspendVisibleParsWhile(() -> forVisibleParagraphIndex(parIdx, p -> virtualFlow.showAtOffset(p, getViewportHeight() - y)));
     }
 
     void showCaretAtTop() {
@@ -1863,7 +1863,7 @@ public class GenericStyledArea<PS, SEG, S> extends Region
         ParagraphBox<PS, SEG, S> cell = getCell(parIdx);
         Bounds caretBounds = cell.getCaretBounds(caretSelectionBind.getUnderlyingCaret());
         double y = caretBounds.getMinY();
-        suspendVisibleParsWhile(() -> virtualFlow.showAtOffset(getVisibleParagraphIndex(parIdx), -y));
+        suspendVisibleParsWhile(() -> forVisibleParagraphIndex(parIdx, p -> virtualFlow.showAtOffset(p, -y)));
     }
 
     /**
@@ -2111,23 +2111,38 @@ public class GenericStyledArea<PS, SEG, S> extends Region
     }
 
     /**
-     * @return the virtual-flow index for the paragraph, or the nearest visible paragraph if folded.
+     * @param allParagraphIndex the index of the paragraph in the underlying document.
+     * @param action the action to perform on the virtual-flow index of the paragraph, if visible / not folded.
+     */
+    private void forVisibleParagraphIndex(int allParagraphIndex, IntConsumer action) {
+        int virtualIndex = getVisibleParagraphIndex(allParagraphIndex);
+        if ( virtualIndex >= 0 ) action.accept(virtualIndex);
+    }
+
+    /**
+     * @param allParagraphIndex the index of the paragraph in the underlying document.
+     * @return the virtual-flow index for the paragraph, or a visible paragraph immediately before or after it if it is folded.
+     *         will return -1 if there are no visible paragraphs before or after it.
      */
     private int getVisibleParagraphIndex(int allParagraphIndex) {
-        int virtualIndex = virtualFlowParagraphs.getViewIndex(allParagraphIndex);
-        if ( virtualIndex >= 0 ) return virtualIndex;
+        int virtualIndex = getVisibleParagraphIndexBefore(allParagraphIndex);
+        return virtualIndex >= 0 ? virtualIndex : getVisibleParagraphIndexAfter(allParagraphIndex);
+    }
 
-        for ( int i = allParagraphIndex - 1; i >= 0; i-- ) {
-            virtualIndex = virtualFlowParagraphs.getViewIndex(i);
+    private int getVisibleParagraphIndexBefore(int allParagraphIndex) {
+        for ( int i = allParagraphIndex ; i >= 0 ; i-- ) {
+            int virtualIndex = virtualFlowParagraphs.getViewIndex(i);
             if ( virtualIndex >= 0 ) return virtualIndex;
         }
+        return -1;
+    }
 
+    private int getVisibleParagraphIndexAfter(int allParagraphIndex) {
         for ( int i = allParagraphIndex + 1; i < getParagraphs().size(); i++ ) {
-            virtualIndex = virtualFlowParagraphs.getViewIndex(i);
+            int virtualIndex = virtualFlowParagraphs.getViewIndex(i);
             if ( virtualIndex >= 0 ) return virtualIndex;
         }
-
-        return 0;
+        return -1;
     }
 
     private Optional<Cell<Paragraph<PS, SEG, S>, ParagraphBox<PS, SEG, S>>> getCellIfVisible(int allParagraphIndex) {
