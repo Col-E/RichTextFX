@@ -983,14 +983,8 @@ public class GenericStyledArea<PS, SEG, S> extends Region
 
     @Override
     public final Optional<Integer> allParToVisibleParIndex(int allParIndex) {
-        if (allParIndex < 0) {
-            throw new IllegalArgumentException("The given paragraph index (allParIndex) cannot be negative but was " + allParIndex);
-        }
-        if (allParIndex >= getParagraphs().size()) {
-            throw new IllegalArgumentException(String.format(
-                    "Paragraphs' last index is [%s] but allParIndex was [%s]",
-                    getParagraphs().size() - 1, allParIndex)
-            );
+        if (allParIndex < 0 || allParIndex >= getParagraphs().size()) {
+            return Optional.empty();
         }
         List<Cell<Paragraph<PS, SEG, S>, ParagraphBox<PS, SEG, S>>> visibleList = virtualFlow.visibleCells();
         int virtualIndex = virtualFlowParagraphs.getViewIndex(allParIndex);
@@ -1006,14 +1000,8 @@ public class GenericStyledArea<PS, SEG, S> extends Region
 
     @Override
     public final int visibleParToAllParIndex(int visibleParIndex) {
-        if (visibleParIndex < 0) {
-            throw new IllegalArgumentException("Visible paragraph index cannot be negative but was " + visibleParIndex);
-        }
-        if (visibleParIndex > 0 && visibleParIndex >= getVisibleParagraphs().size()) {
-            throw new IllegalArgumentException(String.format(
-                    "Visible paragraphs' last index is [%s] but visibleParIndex was [%s]",
-                    getVisibleParagraphs().size() - 1, visibleParIndex)
-            );
+        if (visibleParIndex < 0 || (visibleParIndex > 0 && visibleParIndex >= getVisibleParagraphs().size())) {
+            return -1;
         }
 
         try {
@@ -1023,7 +1011,7 @@ public class GenericStyledArea<PS, SEG, S> extends Region
             else visibleCell = virtualFlow.getCellIfVisible( virtualFlow.getFirstVisibleIndex() )
                        .orElseGet( () -> virtualFlow.visibleCells().get( visibleParIndex ) );
 
-        return visibleCell.getNode().getIndex();
+            return visibleCell.getNode().getIndex();
         }
         catch ( IndexOutOfBoundsException | NoSuchElementException EX )
         {
