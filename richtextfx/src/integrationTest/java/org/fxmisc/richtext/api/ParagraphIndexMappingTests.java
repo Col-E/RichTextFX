@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ParagraphIndexMappingTests extends InlineCssTextAreaAppTest {
 
@@ -53,5 +54,18 @@ public class ParagraphIndexMappingTests extends InlineCssTextAreaAppTest {
         interact(() -> area.showParagraphAtBottom(LAST_PAR_INDEX));
         assertEquals(LAST_PAR_INDEX, area.visibleParToAllParIndex(area.getVisibleParagraphs().size() - 1));
 
+    }
+
+    @Test
+    public void folding_keeps_all_paragraph_indices_and_removes_folded_paragraphs_from_view() {
+        interact(() -> {
+            area.foldParagraphs(1, LAST_PAR_INDEX - 1);
+            area.showParagraphAtTop(LAST_PAR_INDEX);
+        });
+
+        assertTrue(area.isFolded(2));
+        assertEquals(Optional.empty(), area.allParToVisibleParIndex(2));
+        assertEquals(Optional.of(2), area.allParToVisibleParIndex(LAST_PAR_INDEX));
+        assertEquals(LAST_PAR_INDEX, area.visibleParToAllParIndex(2));
     }
 }
