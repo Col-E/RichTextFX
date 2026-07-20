@@ -311,8 +311,8 @@ public interface ViewActions<PS, SEG, S> {
     CharacterHit hit(double x, double y);
 
     /**
-     * Returns 0 if the given paragraph displays its content across only one line, or returns the index
-     * of the line on which the given column position appears if the paragraph spans multiple lines.
+     * Returns 0 if the given paragraph displays its content across only one line or is folded.
+     * Returns the index of the line on which the given column position appears if the paragraph spans multiple lines.
      */
     public int lineIndex(int paragraphIndex, int columnPosition);
 

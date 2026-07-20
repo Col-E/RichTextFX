@@ -22,22 +22,30 @@ public class FoldedParagraphTests extends InlineCssTextAreaAppTest {
     }
 
     @Test
-    public void line_index_works_for_visible_paragraph_and_rejects_folded_paragraph() {
+    public void line_index_works_for_visible_and_folded_paragraphs() {
         interact(() -> {
             // fold 'second' paragraph, so that 'first' and 'third' are visible
             area.replaceText("first\nsecond\nthird");
             area.foldParagraphs(0, 1);
 
-            // verify pos[0, 0] is in the first line of the first paragraph
+            // verify lineIndex[par, 0] is zero for all paragraphs
+            // - visible content is short enough to fit on one line
+            // - folded content is not realized and thus there is no line wrapping to be done
             assertEquals(0, area.lineIndex(0, 0));
+            assertEquals(0, area.lineIndex(1, 0));
+            assertEquals(0, area.lineIndex(2, 0));
 
             // verify current line start/end range is the length of 'first' (5 chars)
             area.moveTo(0, 2);
+            assertEquals(0, area.getCurrentParagraph());
             assertEquals(0, area.getCurrentLineStartInParargraph());
             assertEquals(5, area.getCurrentLineEndInParargraph());
 
-            // verify that lineIndex rejects folded paragraph
-            assertThrows(IllegalArgumentException.class, () -> area.lineIndex(1, 0));
+            // moving to the folded paragraph will skip forward to the next visible paragraph, which is 'third' (5 chars)
+            area.moveTo(1, 2);
+            assertEquals(2, area.getCurrentParagraph());
+            assertEquals(0, area.getCurrentLineStartInParargraph());
+            assertEquals(5, area.getCurrentLineEndInParargraph());
         });
     }
 

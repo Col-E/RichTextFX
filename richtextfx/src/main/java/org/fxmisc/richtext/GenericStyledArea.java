@@ -1041,7 +1041,9 @@ public class GenericStyledArea<PS, SEG, S> extends Region
 
     @Override
     public final int lineIndex(int paragraphIndex, int columnPosition) {
-        return getCell(paragraphIndex).getCurrentLineIndex(columnPosition);
+        return getCellIfVisible(paragraphIndex)
+                .map(c -> c.getNode().getCurrentLineIndex(columnPosition))
+                .orElse(0);
     }
 
     @Override
