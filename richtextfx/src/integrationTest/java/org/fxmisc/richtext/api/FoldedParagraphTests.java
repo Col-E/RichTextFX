@@ -12,6 +12,7 @@ import org.fxmisc.richtext.CaretNode;
 import org.fxmisc.richtext.InlineCssTextAreaAppTest;
 import org.junit.Test;
 
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static javafx.scene.input.MouseButton.PRIMARY;
@@ -81,18 +82,24 @@ public class FoldedParagraphTests extends InlineCssTextAreaAppTest {
 
     @Test
     public void character_bounds_are_empty_for_folded_paragraph() {
-        // fold 'one' paragraph, so that 'zero' and 'two' are visible
+        // fold 'bbb' paragraph, so that 'aaa' and 'ccc' are visible
         interact(() -> {
-            area.replaceText("zero\none\ntwo");
+            area.replaceText("aaa\nbbb\nccc");
             area.foldParagraphs(0, 1);
 
-            // the folded paragraph should not have character bounds on screen, but the visible paragraphs should.
-            int start = area.getAbsolutePosition(0, 0);
-            assertTrue(area.getCharacterBoundsOnScreen(start, start + 1).isPresent());
-            start = area.getAbsolutePosition(1, 0);
-            assertFalse(area.getCharacterBoundsOnScreen(start, start + 1).isPresent());
-            start = area.getAbsolutePosition(2, 0);
-            assertTrue(area.getCharacterBoundsOnScreen(start, start + 1).isPresent());
+            // the folded paragraph (lineIndex 1) should not have character bounds on screen, but the visible paragraphs should.
+            int foldedLine = 1;
+            for (int lineIndex = 0; lineIndex <= 2; lineIndex++) {
+                for (int charIndex = 0; charIndex <= 2; charIndex++) {
+                    int pos = area.getAbsolutePosition(lineIndex, charIndex);
+                    Optional<Bounds> charBounds = area.getCharacterBoundsOnScreen(pos, pos + 1);
+                    if (lineIndex == foldedLine) {
+                        assertFalse(charBounds.isPresent());
+                    } else {
+                        assertTrue(charBounds.isPresent());
+                    }
+                }
+            }
         });
     }
 
