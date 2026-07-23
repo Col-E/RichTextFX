@@ -2,6 +2,8 @@ package org.fxmisc.richtext.api;
 
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
+import javafx.scene.control.Label;
+import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 import org.fxmisc.richtext.CaretNode;
 import org.fxmisc.richtext.InlineCssTextAreaAppTest;
@@ -111,13 +113,14 @@ public class FoldedParagraphTests extends InlineCssTextAreaAppTest {
     public void paragraph_graphic_access_rejects_folded_paragraph() {
         // fold 'one' paragraph, so that 'zero' and 'two' are visible
         interact(() -> {
+            area.setParagraphGraphicFactory(i -> new Label("Line: " + i));
             area.replaceText("zero\none\ntwo");
             area.foldParagraphs(0, 1);
         });
 
-        // getting/creating graphics for the folded paragraph throws an exception, since it is not visible.
-        assertThrows(IllegalArgumentException.class, () -> area.getParagraphGraphic(1));
-        assertThrows(IllegalArgumentException.class, () -> area.recreateParagraphGraphic(1));
+        // getting/creating graphics for the folded paragraph is no-op (returns null and does not throw an exception).
+        assertNull(area.getParagraphGraphic(1));
+        assertDoesNotThrow(() -> area.recreateParagraphGraphic(1));
 
         // getting/creating graphics for the visible paragraphs works as expected.
         interact(() -> {
