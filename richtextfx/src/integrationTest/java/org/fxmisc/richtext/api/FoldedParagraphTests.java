@@ -118,6 +118,14 @@ public class FoldedParagraphTests extends InlineCssTextAreaAppTest {
         // getting/creating graphics for the folded paragraph throws an exception, since it is not visible.
         assertThrows(IllegalArgumentException.class, () -> area.getParagraphGraphic(1));
         assertThrows(IllegalArgumentException.class, () -> area.recreateParagraphGraphic(1));
+
+        // getting/creating graphics for the visible paragraphs works as expected.
+        interact(() -> {
+            assertNotNull(area.getParagraphGraphic(0));
+            assertDoesNotThrow(() -> area.recreateParagraphGraphic(0));
+            assertNotNull(area.getParagraphGraphic(2));
+            assertDoesNotThrow(() -> area.recreateParagraphGraphic(2));
+        });
     }
 
     @Test

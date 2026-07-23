@@ -169,7 +169,7 @@ public class ParagraphIndexMappingTests extends InlineCssTextAreaAppTest {
         for (int i = 1; i < paragraphs.size(); i++) {
             final int j = i;
             assertTrue(area.allParToVisibleParIndex(i).isEmpty());
-            assertEquals(-1, area.visibleParToAllParIndex(j));
+            assertThrows(IllegalArgumentException.class, () -> area.visibleParToAllParIndex(j));
         }
     }
 
@@ -179,8 +179,8 @@ public class ParagraphIndexMappingTests extends InlineCssTextAreaAppTest {
              assertEquals(Optional.empty(), area.allParToVisibleParIndex(-1));
              assertEquals(Optional.empty(), area.allParToVisibleParIndex(area.getParagraphs().size()));
 
-             assertEquals(-1, area.visibleParToAllParIndex(-1));
-             assertEquals(-1, area.visibleParToAllParIndex(Integer.MAX_VALUE));
+            assertThrows(IllegalArgumentException.class, () -> area.visibleParToAllParIndex(-1));
+            assertThrows(IllegalArgumentException.class, () -> area.visibleParToAllParIndex(Integer.MAX_VALUE));
         });
     }
 

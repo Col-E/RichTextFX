@@ -388,15 +388,28 @@ public class GenericStyledArea<PS, SEG, S> extends Region
     private final ObjectProperty<IntFunction<? extends Node>> paragraphGraphicFactory = new SimpleObjectProperty<>(null);
     @Override public ObjectProperty<IntFunction<? extends Node>> paragraphGraphicFactoryProperty() { return paragraphGraphicFactory; }
 
-    public void recreateParagraphGraphic( int parNdx ) {
+    /**
+     * Recreates the given paragraph graphic by index if it is visible.
+     * @param allParagraphIndex All paragraph index of the paragraph whose graphic is to be recreated.
+     */
+    public void recreateParagraphGraphic( int allParagraphIndex ) {
         ObjectProperty<IntFunction<? extends Node>> gProp;
-        gProp = getCell(parNdx).graphicFactoryProperty();
+        Optional<Cell<Paragraph<PS, SEG, S>, ParagraphBox<PS, SEG, S>>> opt = getCellIfVisible(allParagraphIndex);
+        if (opt.isEmpty()) return;
+        gProp = opt.get().getNode().graphicFactoryProperty();
         gProp.unbind();
         gProp.bind(paragraphGraphicFactoryProperty());
     }
 
-    public Node getParagraphGraphic( int parNdx ) {
-        return getCell(parNdx).getGraphic();
+    /**
+     * @param allParagraphIndex All paragraph index of the paragraph whose graphic is to be returned.
+     * @return The graphic {@code Node} of the paragraph at the given all paragraph index,
+     *         or {@code null} if the paragraph is not visible.
+     */
+    public Node getParagraphGraphic( int allParagraphIndex ) {
+        return getCellIfVisible(allParagraphIndex)
+                .map(c -> c.getNode().getGraphic())
+                .orElse(null);
     }
 
     /**
@@ -1001,7 +1014,7 @@ public class GenericStyledArea<PS, SEG, S> extends Region
     @Override
     public final int visibleParToAllParIndex(int visibleParIndex) {
         if (visibleParIndex < 0 || (visibleParIndex > 0 && visibleParIndex >= getVisibleParagraphs().size())) {
-            return -1;
+            throw new IllegalArgumentException("visibleParIndex is out of bounds: " + visibleParIndex);
         }
 
         try {
@@ -1048,7 +1061,7 @@ public class GenericStyledArea<PS, SEG, S> extends Region
 
     @Override
     public int getParagraphLinesCount(int paragraphIndex) {
-        return isParagraphFolded(paragraphIndex) ? 0 : getCell(paragraphIndex).getLineCount();
+        return isParagraphFolded(paragraphIndex) ? 1 : getCell(paragraphIndex).getLineCount();
     }
 
     @Override
