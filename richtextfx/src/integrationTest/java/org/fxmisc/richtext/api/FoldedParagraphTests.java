@@ -1,8 +1,11 @@
 package org.fxmisc.richtext.api;
 
+import javafx.event.Event;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 import org.fxmisc.richtext.CaretNode;
@@ -216,6 +219,35 @@ public class FoldedParagraphTests extends InlineCssTextAreaAppTest {
     }
 
     @Test
+    public void navigation_skips_folded_paragraphs_in_both_directions_key_events() {
+        // variant of the prior test, but with key events instead of moveTo
+        interact(() -> {
+            // fold 'two' and 'three' paragraphs, so that 'zero', 'one', and 'four' are visible
+            area.replaceText("zero\none\ntwo\nthree\nfour");
+            area.foldParagraphs(1, 3);
+
+            // verify that moving forward to the folded paragraph skips to the next visible paragraph
+            assertEquals(1, area.getCurrentParagraph());
+            assertEquals(5, area.getCaretPosition());
+            area.fireEvent(createKeyEvent(KeyCode.RIGHT));
+            assertEquals(6, area.getCaretPosition());
+            area.fireEvent(createKeyEvent(KeyCode.RIGHT));
+            assertEquals(7, area.getCaretPosition());
+            area.fireEvent(createKeyEvent(KeyCode.RIGHT));
+            assertEquals(8, area.getCaretPosition());
+            assertEquals(1, area.getCurrentParagraph());
+            area.fireEvent(createKeyEvent(KeyCode.RIGHT));
+            assertEquals(19, area.getCaretPosition());
+            assertEquals(4, area.getCurrentParagraph());
+
+            // verify that moving backward to the folded paragraph skips to the previous visible paragraph
+            area.fireEvent(createKeyEvent(KeyCode.LEFT));
+            assertEquals(8, area.getCaretPosition());
+            assertEquals(1, area.getCurrentParagraph());
+        });
+    }
+
+    @Test
     public void auto_height_excludes_folded_paragraphs() {
         // if we set auto-height we effectively verify GenericStyledArea#computePrefHeight counts only visible paragraphs.
         interact(() -> {
@@ -234,5 +266,9 @@ public class FoldedParagraphTests extends InlineCssTextAreaAppTest {
     private void assertVisibleParagraph(int allParagraphIndex) {
         assertTrue(area.allParToVisibleParIndex(allParagraphIndex).isPresent(),
                 "Paragraph " + allParagraphIndex + " should be visible");
+    }
+
+    private static Event createKeyEvent(KeyCode keyCode) {
+        return new KeyEvent(KeyEvent.KEY_PRESSED, keyCode.getChar(), "unset", keyCode, false, false, false ,false);
     }
 }
